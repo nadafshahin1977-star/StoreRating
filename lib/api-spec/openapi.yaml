@@ -1,0 +1,532 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: StoreRate role-based store rating platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: admin
+  - name: stores
+  - name: ratings
+  - name: users
+  - name: owner
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create a normal user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the current session user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change the current user's password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /admin/summary:
+    get:
+      operationId: getAdminSummary
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Order"
+        - name: role
+          in: query
+          schema:
+            $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+    post:
+      operationId: createUser
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /admin/users/{id}:
+    get:
+      operationId: getUser
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/stores:
+    get:
+      operationId: listAdminStores
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Order"
+      responses:
+        "200":
+          description: Paginated stores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreListResponse"
+    post:
+      operationId: createStore
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreInput"
+      responses:
+        "201":
+          description: Store created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreResponse"
+  /stores:
+    get:
+      operationId: listStores
+      tags: [stores]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Store directory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreBrowseResponse"
+  /ratings:
+    post:
+      operationId: upsertRating
+      tags: [ratings]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingInput"
+      responses:
+        "200":
+          description: Rating saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RatingResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /owner/dashboard:
+    get:
+      operationId: getOwnerDashboard
+      tags: [owner]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Store owner dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerDashboard"
+  /users/profile:
+    get:
+      operationId: getProfile
+      tags: [users]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: number
+    Page:
+      name: page
+      in: query
+      schema:
+        type: number
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: number
+        minimum: 1
+        maximum: 100
+        default: 10
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+    Sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        default: name
+    Order:
+      name: order
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    Role:
+      type: string
+      enum: [ADMIN, NORMAL_USER, STORE_OWNER]
+    User:
+      type: object
+      properties:
+        id: { type: number }
+        name: { type: string }
+        email: { type: string }
+        address: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, email, address, role, createdAt]
+    UserWithRating:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            storeAverageRating: { type: ["number", "null"] }
+          required: [storeAverageRating]
+    Store:
+      type: object
+      properties:
+        id: { type: number }
+        name: { type: string }
+        email: { type: string }
+        address: { type: string }
+        ownerId: { type: ["number", "null"] }
+        ownerName: { type: ["string", "null"] }
+        overallRating: { type: number }
+        ratingCount: { type: number }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, email, address, ownerId, ownerName, overallRating, ratingCount, createdAt]
+    StoreBrowse:
+      allOf:
+        - $ref: "#/components/schemas/Store"
+        - type: object
+          properties:
+            myRating: { type: ["number", "null"] }
+          required: [myRating]
+    Rating:
+      type: object
+      properties:
+        id: { type: number }
+        userId: { type: number }
+        storeId: { type: number }
+        rating: { type: number, minimum: 1, maximum: 5 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, userId, storeId, rating, createdAt, updatedAt]
+    SignupInput:
+      type: object
+      required: [name, email, password, address]
+      properties:
+        name: { type: string, minLength: 20, maxLength: 60 }
+        email: { type: string }
+        password: { type: string, minLength: 8, maxLength: 16 }
+        address: { type: string, maxLength: 400 }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    ChangePasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string, minLength: 8, maxLength: 16 }
+    AdminUserInput:
+      allOf:
+        - $ref: "#/components/schemas/SignupInput"
+        - type: object
+          required: [role]
+          properties:
+            role: { $ref: "#/components/schemas/Role" }
+    StoreInput:
+      type: object
+      required: [name, email, address]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        email: { type: string }
+        address: { type: string, maxLength: 400 }
+        ownerId: { type: ["number", "null"] }
+    RatingInput:
+      type: object
+      required: [storeId, rating]
+      properties:
+        storeId: { type: number }
+        rating: { type: number, minimum: 1, maximum: 5 }
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+      required: [token, user]
+    UserResponse:
+      $ref: "#/components/schemas/User"
+    UserDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/UserWithRating"
+    StoreResponse:
+      $ref: "#/components/schemas/Store"
+    RatingResponse:
+      $ref: "#/components/schemas/Rating"
+    MessageResponse:
+      type: object
+      properties:
+        message: { type: string }
+      required: [message]
+    AdminSummary:
+      type: object
+      properties:
+        totalUsers: { type: number }
+        totalStores: { type: number }
+        totalRatings: { type: number }
+      required: [totalUsers, totalStores, totalRatings]
+    Pagination:
+      type: object
+      properties:
+        page: { type: number }
+        pageSize: { type: number }
+        total: { type: number }
+        totalPages: { type: number }
+      required: [page, pageSize, total, totalPages]
+    UserListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+      required: [items, pagination]
+    StoreListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Store" }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+      required: [items, pagination]
+    StoreBrowseResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StoreBrowse" }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+      required: [items, pagination]
+    OwnerRating:
+      type: object
+      properties:
+        userId: { type: number }
+        userName: { type: string }
+        rating: { type: number }
+        createdAt: { type: string, format: date-time }
+      required: [userId, userName, rating, createdAt]
+    OwnerDashboard:
+      type: object
+      properties:
+        store: { $ref: "#/components/schemas/Store" }
+        ratings:
+          type: array
+          items: { $ref: "#/components/schemas/OwnerRating" }
+      required: [store, ratings]
+    ErrorResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        errors:
+          type: array
+          items: { type: string }
+      required: [success, message]

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "StoreRate"
+description = "A role-based store rating platform where customers rate stores, administrators manage the directory, and store owners monitor feedback."
+version = "1.0.0"
+id = "artifacts/store-rate"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24067
+
+[services.development]
+run = "pnpm --filter @workspace/store-rate run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/store-rate", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/store-rate/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24067"
+BASE_PATH = "/"
